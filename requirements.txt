@@ -2,3 +2,6 @@ neo4j==5.14.0
 pandas==2.1.4
 Faker==22.5.1
 tqdm==4.66.1  # Pour la barre de progression
+streamlit==1.31.0
+streamlit-agraph==0.0.45
+networkx==3.1
