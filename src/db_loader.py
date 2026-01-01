@@ -68,3 +68,27 @@ class GraphDB:
         for i in range(0, total, batch_size):
             batch = df.iloc[i:i+batch_size].to_dict('records')
             session.run(query, rows=batch)
+
+    def inject_fraud_ring(self):
+        """Crée manuellement un cycle de fraude évident A->B->C->A"""
+        print("Injecting explicit Fraud Ring for demo...")
+        query = """
+        CREATE (c1:Client {id:'FRAUD_1', name:'M. White', risk_score:0})
+        CREATE (c2:Client {id:'FRAUD_2', name:'M. Pink', risk_score:0})
+        CREATE (c3:Client {id:'FRAUD_3', name:'M. Blue', risk_score:0})
+        
+        CREATE (a1:Account {iban:'FR_FRAUD_1', balance:0})-[:DOMICILIE_CHEZ]->(:Bank {name:'Mafia Bank'})
+        CREATE (a2:Account {iban:'FR_FRAUD_2', balance:0})-[:DOMICILIE_CHEZ]->(:Bank {name:'Mafia Bank'})
+        CREATE (a3:Account {iban:'FR_FRAUD_3', balance:0})-[:DOMICILIE_CHEZ]->(:Bank {name:'Mafia Bank'})
+        
+        CREATE (c1)-[:POSSEDE]->(a1)
+        CREATE (c2)-[:POSSEDE]->(a2)
+        CREATE (c3)-[:POSSEDE]->(a3)
+        
+        // Le cycle
+        CREATE (a1)-[:VIRE_VERS {amount: 15000, date: '2024-01-01', is_suspicious:false}]->(a2)
+        CREATE (a2)-[:VIRE_VERS {amount: 14000, date: '2024-01-02', is_suspicious:false}]->(a3)
+        CREATE (a3)-[:VIRE_VERS {amount: 13000, date: '2024-01-03', is_suspicious:false}]->(a1)
+        """
+        with self.driver.session() as session:
+            session.run(query)

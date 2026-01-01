@@ -1,41 +1,50 @@
 from src.generator import DataGenerator
 from src.db_loader import GraphDB
-import os
+from src.inference_engine import FraudDetector # <--- IMPORT DU NOUVEAU MODULE
+import time
 
-# Configuration Neo4j
+# Configuration
 URI = "bolt://localhost:7687"
 AUTH = ("neo4j", "password123")
 
 def main():
     print("--- Démarrage du Projet Graph AML ---")
     
-    # 1. Génération des données
-    gen = DataGenerator(num_clients=200, num_banks=5)
+    # ÉTAPE 1 : GENERATION & CHARGEMENT (Déjà fait, mais on peut relancer)
+    # Pour gagner du temps si la base est déjà pleine, commentez les lignes ci-dessous
+    # -------------------------------------------------------------------
+    print("\n[PHASE 1] Initialisation des données...")
+    gen = DataGenerator(num_clients=300, num_banks=5)
     df_clients = gen.generate_clients()
     df_accounts = gen.generate_accounts()
-    # On génère beaucoup de transactions pour avoir un graphe dense
-    df_transactions = gen.generate_transactions(num_transactions=1000)
+    # On force plus de transactions pour être sûr d'avoir des cycles
+    df_transactions = gen.generate_transactions(num_transactions=2000) 
 
-    print(f"Data Generated: {len(df_clients)} clients, {len(df_transactions)} transactions.")
-
-    # 2. Connexion à la DB
     db = GraphDB(URI, AUTH[0], AUTH[1])
-
     try:
-        # 3. Nettoyage et Préparation
         db.clean_database()
         db.create_constraints()
-
-        # 4. Injection
         db.load_data(df_clients, df_accounts, df_transactions)
-        
-        print("\n--- SUCCÈS : Base de données construite ! ---")
-        print("Ouvrez http://localhost:7474 et lancez la requête : MATCH (n) RETURN n LIMIT 50")
-
-    except Exception as e:
-        print(f"Erreur : {e}")
+        db.inject_fraud_ring()
     finally:
         db.close()
+    # -------------------------------------------------------------------
+
+    time.sleep(1) # Petite pause
+
+    # ÉTAPE 2 : DÉTECTION DE FRAUDE (LE MOTEUR D'INFÉRENCE)
+    print("\n[PHASE 2] Analyse Intelligente...")
+    detector = FraudDetector(URI, AUTH[0], AUTH[1])
+    try:
+        detector.run_detection_pipeline()
+    except Exception as e:
+        print(f"Erreur detection : {e}")
+    finally:
+        detector.close()
+
+    print("\n--- PROJET TERMINÉ AVEC SUCCÈS ---")
+    print("Pour vérifier, lancez cette requête dans Neo4j Browser :")
+    print("MATCH (c:Client) WHERE c.status = 'CRITICAL' RETURN c LIMIT 10")
 
 if __name__ == "__main__":
     main()
