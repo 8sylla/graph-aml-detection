@@ -1,0 +1,13 @@
+services:
+  neo4j:
+    image: neo4j:5.15.0
+    container_name: aml_graph_db
+    ports:
+      - "7474:7474" # Port HTTP (Interface Web)
+      - "7687:7687" # Port Bolt (Connexion Python)
+    environment:
+      - NEO4J_AUTH=neo4j/password123  # Login/Mdp (changez si vous voulez)
+      - NEO4J_PLUGINS=["apoc", "graph-data-science"] # Plugins utiles
+    volumes:
+      - ./neo4j_data:/data
+
