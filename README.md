@@ -33,15 +33,8 @@ Contrairement aux approches statistiques traditionnelles ("Black Box"), ce syst�
 
 Le système suit une architecture modulaire et conteneurisée :
 
-```mermaid
-graph TD
-    A[Générateur de Données Synthetiques] -->|ETL Python| B(Base de Connaissances Neo4j)
-    C[Moteur d'Inférence Python] -->|Requetes Cypher| B
-    B -->|Resultats & Patterns| C
-    C -->|Mise à jour des Scores| B
-    D[Interface Streamlit] -->|Lecture| B
-    User((Analyste)) -->|Consultation| D
-```
+![Architecture Technique](/docs/architecture_technique.png)
+
 
 ### Stack Technologique
 | Composant | Technologie | Description |
